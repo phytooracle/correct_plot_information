@@ -130,7 +130,8 @@ def fix_error_plots(geojson_path, data_path, output_directory, error_plot_list, 
             temp_df = temp_df.drop(common_columns, axis=1, errors='ignore')
         
         # Merge temp_df and gdf
-        temp_df = gdf.merge(temp_df, on='plot')
+        gdf_geno = gpd.read_file(geojson_path)
+        temp_df = gdf_geno.merge(temp_df, on='plot')
         
         if args.fieldbook_information:
             items = ['plot', 'year', 'range', 'row', 'species', 'treatment', 'type', 'rep', 'accession']
