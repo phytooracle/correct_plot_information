@@ -119,31 +119,30 @@ def fix_error_plots(geojson_path, data_path, output_directory, error_plot_list, 
         # Get a list of original column names
         cols = temp_df.columns.tolist()
 
+        # Get list of shared columns between temp_df and gdf
+        common_columns = temp_df.columns.intersection(gdf.columns).tolist()
+        
+        # Drop shared columns in temp_df to prevent errors
+        if 'plot' in common_columns:
+            common_columns.remove('plot')
+
+        if common_columns:
+            temp_df = temp_df.drop(common_columns, axis=1, errors='ignore')
+        
+        # Merge temp_df and gdf
+        temp_df = gdf.merge(temp_df, on='plot')
+        
         if args.fieldbook_information:
+            items = ['plot', 'year', 'range', 'row', 'species', 'treatment', 'type', 'rep', 'accession']
 
-            print('Adding fieldbook information.')
-        
-            # List of columns to check
-            columns_to_check = ['plot', 'year', 'range', 'row', 'species', 'treatment', 'type', 'rep', 'accession']
+            for item in reversed(items):  # reverse the list to maintain the order when inserting at the front
+                if item not in cols:
+                    cols.insert(0, item)
 
-            # Get the columns that are not in cols
-            missing_cols = [col for col in columns_to_check if col not in cols]
-
-            # Add missing columns to the beginning of cols
-            cols = missing_cols + cols
-
-        else:
-
-            temp_df = temp_df.drop(['year', 'range', 'row', 'species', 'treatment', 'type', 'rep'], axis=1, errors='ignore')
-
-        # ADDED 
-        temp_df = temp_df.drop(['accession'], axis=1, errors='ignore')
-        gdf_geno = gpd.read_file(geojson_path)
-        # gdf_geno = gdf_geno[['plot', 'accession']]
-        temp_df = gdf_geno.merge(temp_df, on='plot')
+        # Keep only columns in the original dataframe and their order
         temp_df = temp_df[cols]
-        ###
         
+        # Save to file
         csv_outname = os.path.basename(csv)
         temp_df.to_csv(os.path.join(output_directory, csv_outname.replace('.csv', '_corrected.csv')), index=False)
 
